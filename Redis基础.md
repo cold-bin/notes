@@ -449,7 +449,7 @@ select 0
 
 
 
-# 2.Redis常见命令
+# 2.Redis常见命令与数据类型
 
 Redis是典型的key-value数据库，key一般是字符串，而value包含很多不同的数据类型：
 
@@ -738,6 +738,129 @@ Jack 85, Lucy 89, Rose 82, Tom 95, Jerry 78, Amy 92, Miles 76
 - 查出成绩80分以下的所有同学
 
 
+
+## 2.7.HyperLogLog类型
+
+Redis HyperLogLog 是用来做基数统计的算法，HyperLogLog 的优点是，在输入元素的数量或者体积非常非常大时，计算基数所需的空间总是固定 的、并且是很小的。
+
+在 Redis 里面，每个 HyperLogLog 键只需要花费 12 KB 内存，就可以计算接近 264 个不同元素的基 数。这和计算基数时，元素越多耗费内存就越多的集合形成鲜明对比。
+
+但是，因为 HyperLogLog 只会根据输入元素来计算基数，而不会储存输入元素本身，所以 HyperLogLog 不能像集合那样，返回输入的各个元素。
+
+**什么是基数?**
+
+比如数据集 {1, 3, 5, 7, 5, 7, 8}， 那么这个数据集的基数集为 {1, 3, 5 ,7, 8}, 基数(不重复元素)为5。 基数估计就是在误差可接受的范围内，快速计算基数。
+
+常用命令：
+
+- PFADD key element [element ...]：添加指定元素到 HyperLogLog 中。
+- PFCOUNT key [key ...]：返回给定 HyperLogLog 的基数估算值。
+- PFMERGE destkey sourcekey [sourcekey ...]：将多个 HyperLogLog 合并为一个 HyperLogLog（并集）
+
+
+
+## 2.8.GEO类型
+
+Redis GEO 主要用于存储地理位置信息，并对存储的信息进行操作，该功能在 Redis 3.2 版本新增。
+
+Redis GEO 操作方法有：
+
+- GEOADD key longitude latitude member [longitude latitude member ...]：添加地理位置的坐标。
+
+- GEOPOS key member [member ...]：获取地理位置的坐标。
+
+- GEODIST key member1 member2 [m|km|ft|mi]：计算两个位置之间的距离。
+
+  最后一个距离单位参数说明：
+
+  - m ：米，默认单位。
+  - km ：千米。
+  - mi ：英里。
+  - ft ：英尺。
+
+- GEORADIUS key longitude latitude radius m|km|ft|mi [WITHCOORD] [WITHDIST] [WITHHASH] [COUNT count] [ASC|DESC] [STORE key] [STOREDIST key]：根据用户给定的经纬度坐标来获取指定范围内的地理位置集合。
+
+  > 参数说明：
+  >
+  > - m ：米，默认单位。
+  > - km ：千米。
+  > - mi ：英里。
+  > - ft ：英尺
+  > - WITHDIST: 在返回位置元素的同时， 将位置元素与中心之间的距离也一并返回。
+  > - WITHCOORD: 将位置元素的经度和维度也一并返回。
+  > - WITHHASH: 以 52 位有符号整数的形式， 返回位置元素经过原始 geohash 编码的有序集合分值。 这个选项主要用于底层应用或者调试， 实际中的作用并不大。
+  > - COUNT 限定返回的记录数。
+  > - ASC: 查找结果根据距离从近到远排序。
+  > - DESC: 查找结果根据从远到近排序。
+
+- GEORADIUSBYMEMBER key member radius m|km|ft|mi [WITHCOORD] [WITHDIST] [WITHHASH] [COUNT count] [ASC|DESC] [STORE key] [STOREDIST key]：根据储存在位置集合里面的某个地点获取指定范围内的地理位置集合。
+
+  > 参数说明：
+  >
+  > - m ：米，默认单位。
+  > - km ：千米。
+  > - mi ：英里。
+  > - ft ：英尺。
+  > - WITHDIST: 在返回位置元素的同时， 将位置元素与中心之间的距离也一并返回。
+  > - WITHCOORD: 将位置元素的经度和维度也一并返回。
+  > - WITHHASH: 以 52 位有符号整数的形式， 返回位置元素经过原始 geohash 编码的有序集合分值。 这个选项主要用于底层应用或者调试， 实际中的作用并不大。
+  > - COUNT 限定返回的记录数。
+  > - ASC: 查找结果根据距离从近到远排序。
+  > - DESC: 查找结果根据从远到近排序。
+
+- GEOHASH key member [member ...]：返回一个或多个位置对象的 geohash 值。
+
+## 2.9.Stream类型
+
+Redis Stream 是 Redis 5.0 版本新增加的数据结构。
+
+Stream 实际上是一个具有消息发布/订阅功能的组件，也就常说的消息队列。其实这种类似于 broker/consumer(生产者/消费者)的数据结构很常见，比如 RabbitMQ 消息中间件、Celery 消息中间件，以及 Kafka 分布式消息系统等，而 Redis Stream 正是借鉴了 Kafaka 系统。
+
+**1) 优点**
+
+Strean 除了拥有很高的性能和内存利用率外, 它最大的特点就是提供了消息的持久化存储，以及主从复制功能，从而解决了网络断开、Redis 宕机情况下，消息丢失的问题，即便是重启 Redis，存储的内容也会存在。
+
+**2) 流程**
+
+Stream 消息队列主要由四部分组成，分别是：消息本身、生产者、消费者和消费组，对于前述三者很好理解，下面了解什么是消费组。
+
+一个 Stream 队列可以拥有多个消费组，每个消费组中又包含了多个消费者，组内消费者之间存在竞争关系。当某个消费者消费了一条消息时，同组消费者，都不会再次消费这条消息。被消费的消息 ID 会被放入等待处理的 Pending_ids 中。每消费完一条信息，消费组的游标就会向前移动一位，组内消费者就继续去争抢下消息。
+
+Redis Stream 的结构如下所示，它有一个消息链表，将所有加入的消息都串起来，每个消息都有一个唯一的 ID 和对应的内容：
+
+![img](https://raw.githubusercontent.com/cold-bin/img-for-cold-bin-blog/master/img/stream1.png)
+
+每个 Stream 都有唯一的名称，它就是 Redis 的 key，在我们首次使用 xadd 指令追加消息时自动创建。
+
+上图解析：
+
+- Consumer Group ：消费组，使用 XGROUP CREATE 命令创建，一个消费组有多个消费者(Consumer)。
+- last_delivered_id ：游标，每个消费组会有个游标 last_delivered_id ，任意一个消费者读取了消息都会使游标 last_delivered_id 往前移动。
+- pending_ids ：消费者(Consumer)的状态变量，作用是维护消费者的未确认的 id。 pending_ids 记录了当前已经被客户端读取的消息，但是还没有 ack (Acknowledge character：确认字符）。
+
+消息队列相关命令：
+
+- XADD - 添加消息到末尾
+- XTRIM - 对流进行修剪，限制长度
+- XDEL - 删除消息
+- XLEN - 获取流包含的元素数量，即消息长度
+- XRANGE - 获取消息列表，会自动过滤已经删除的消息
+- XREVRANGE - 反向获取消息列表，ID 从大到小
+- XREAD - 以阻塞或非阻塞方式获取消息列表
+
+消费者组相关命令：
+
+- XGROUP CREATE - 创建消费者组
+- XREADGROUP GROUP - 读取消费者组中的消息
+- XACK - 将消息标记为"已处理"
+- XGROUP SETID - 为消费者组设置新的最后递送消息ID
+- XGROUP DELCONSUMER - 删除消费者
+- XGROUP DESTROY - 删除消费者组
+- XPENDING - 显示待处理消息的相关信息
+- XCLAIM - 转移消息的归属权
+- XINFO - 查看流和消费者组的相关信息；
+- XINFO GROUPS - 打印消费者组的信息；
+- XINFO STREAM - 打印流信息
 
 # 3.Redis的Java客户端
 
