@@ -1,7 +1,7 @@
 ---
 title: "Redis基础"
 date: 2023-01-08T10:27:07+08:00
-tags: [Redis基础]
+tags: [Redis各大数据类型,bitmap,jedis客户端]
 categories: [Redis]
 draft: false
 ---
