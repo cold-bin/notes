@@ -8861,4 +8861,96 @@ BFS 遍历是一类很值得反复体会和练习的题目。一方面，BFS 遍
   }
   ```
   
+
+## day76
+
+#### [409. 最长回文串](https://leetcode.cn/problems/longest-palindrome/)
+
+- 题目
+
+  给定一个包含大写字母和小写字母的字符串 `s` ，返回 *通过这些字母构造成的 **最长的回文串*** 。
+
+  在构造过程中，请注意 **区分大小写** 。比如 `"Aa"` 不能当做一个回文字符串。
+
+   
+
+  **示例 1:**
+
+  ```
+  输入:s = "abccccdd"
+  输出:7
+  解释:
+  我们可以构造的最长的回文串是"dccaccd", 它的长度是 7。
+  ```
+
+  **示例 2:**
+
+  ```
+  输入:s = "a"
+  输入:1
+  ```
+
+  **示例 3：**
+
+  ```
+  输入:s = "aaaaaccc"
+  输入:7
+  ```
+
+  **提示:**
+
+  - `1 <= s.length <= 2000`
+  - `s` 只由小写 **和/或** 大写英文字母组成
+
+- 解法
+
+  **解法一：数学规律**
+
+  题目要求仅仅只是需要根据给出的字符序列构造出最长回文串序列，回文串的长度如果是偶数那么前一半字符序列是后一半字符序列的“镜像”；如果是奇数，那么中间会有一个字符作为分隔，左右两边是“镜像”关系。针对“镜像”字符序列，也就是说，一个字符重复n次，如果n是偶数，那么可以将这些字符一半放在左边，一半放在右边；如果是奇数，那么可以去掉一个字符，然后将一半放左边，一半放右边。如果给的字符序列里存在奇数个重复字符，都可以作为“镜像”序列的地中情况；如果都是偶数，那么只能构造第一个“镜像”字符序列。
+
+  ```java
+  class Solution {
+      public int longestPalindrome(String s) {
+          if(s.length()==1) return 1;
+          // 先字典排序
+          char[] chs = s.toCharArray();
+          Arrays.sort(chs);
+          // System.out.println(Arrays.toString(chs));
+          char pre = chs[0];
+          int count = 1;
+          int[] counts = new int[chs.length];
+          int countIdx = 0;
+          for(int i=1;i<chs.length;i++){
+              if(chs[i]==pre){
+                  count++;
+              }else{
+                  // 暂存
+                  counts[countIdx] = count;
+                  countIdx++;
+                  count=1;
+                  pre = chs[i];
+              }
+          }
+          counts[countIdx]=count;
+          // System.out.println(Arrays.toString(counts));
+          int Len = 1;
+          boolean flag = false;
+          for(int i=0;i<counts.length&&counts[i]!=0;i++){
+              if(counts[i]%2==0){
+                  Len+=counts[i];
+              }else{
+                  if(counts[i]>1){
+                      Len+=counts[i]-1;
+                  }
+                  flag=true;
+              } 
+          }
   
+          return flag?Len:Len-1;
+      }
+  }
+  ```
+
+  **解法二：官方解法**
+
+  https://leetcode.cn/problems/longest-palindrome/solution/zui-chang-hui-wen-chuan-by-leetcode-solution/
